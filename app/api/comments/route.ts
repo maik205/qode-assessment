@@ -1,10 +1,10 @@
 import { IApiResponse } from "@/app/interfaces/api.response";
 import { CommentType } from "@/app/interfaces/entity.types";
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
-  request: Request
+  request: NextRequest
 ): Promise<NextResponse<IApiResponse<CommentType, unknown>>> {
   try {
     const body = await request.json();
