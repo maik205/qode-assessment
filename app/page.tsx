@@ -94,7 +94,7 @@ export default function Home() {
           ) : images.length === 0 ? (
             <p>No images uploaded yet.</p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="w-full flex gap-5 flex-wrap justify-center">
               {images.map((img) => (
                 <ImageCard key={img.id} data={img} />
               ))}

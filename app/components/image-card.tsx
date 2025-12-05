@@ -32,6 +32,7 @@ export function ImageCard(props: Readonly<{ data: ImageType }>) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={`data:image/png;base64,${image_base64}`} alt="Uploaded" />
       }
+      className="h-max"
     >
       <Meta
         title={`Uploaded at: ${new Date(created_at).toLocaleString()}`}
