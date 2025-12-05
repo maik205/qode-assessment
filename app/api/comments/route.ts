@@ -1,20 +1,24 @@
+import { IApiResponse } from "@/app/interfaces/api.response";
+import { CommentType } from "@/app/interfaces/entity.types";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request
+): Promise<NextResponse<IApiResponse<CommentType, unknown>>> {
   try {
     const body = await request.json();
     const { imageId, content } = body || {};
 
     if (!imageId || typeof imageId !== "string") {
       return NextResponse.json(
-        { error: "imageId is required" },
+        { data: null, error: "imageId is required" },
         { status: 400 }
       );
     }
     if (!content || typeof content !== "string") {
       return NextResponse.json(
-        { error: "content is required" },
+        { data: null, error: "content is required" },
         { status: 400 }
       );
     }
@@ -26,8 +30,17 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json(comment, { status: 201 });
+    return NextResponse.json(
+      {
+        data: comment,
+        error: null,
+      },
+      { status: 201 }
+    );
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    return NextResponse.json(
+      { data: null, error: String(error) },
+      { status: 500 }
+    );
   }
 }

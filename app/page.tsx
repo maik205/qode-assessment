@@ -10,14 +10,8 @@ import { IApiResponse } from "./interfaces/api.response";
 import { httpClient } from "./http.service";
 import { API_ROUTES } from "./routes";
 import { fileToBase64 } from "./utils";
-
-type CommentType = { id: string; content: string; created_at: string };
-type ImageType = {
-  id: string;
-  image_base64: string;
-  created_at: string;
-  comments: CommentType[];
-};
+import { CommentType, ImageType } from "./interfaces/entity.types";
+import { ImageCard } from "./components/image-card";
 
 export default function Home() {
   const [images, setImages] = useState<ImageType[]>([]);
@@ -34,7 +28,6 @@ export default function Home() {
   async function fetchImages() {
     try {
       const images = await httpClient.get<ImageType[]>(API_ROUTES.IMAGES);
-      console.log(images);
       setImages(images || []);
     } catch (err) {
       console.error(err);
@@ -53,7 +46,7 @@ export default function Home() {
         image_base64: base64,
       });
       if (res) {
-        setImages(images.push(res) ? [...images] : images);
+        setImages(images.unshift(res) ? [...images] : images);
       }
     } catch (err) {
       console.error(err);
@@ -113,55 +106,7 @@ export default function Home() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {images.map((img) => (
-                <Card
-                  key={img.id}
-                  hoverable
-                  cover={
-                    <img
-                      src={`data:image/png;base64,${img.image_base64}`}
-                      alt="Uploaded"
-                    />
-                  }
-                >
-                  <Meta
-                    title={`Uploaded at: ${new Date(
-                      img.created_at
-                    ).toLocaleString()}`}
-                    description={
-                      <div>
-                        <div className="mb-2">
-                          <strong>Comments:</strong>
-                          {img.comments.length === 0 && <p>No comments yet.</p>}
-                          {img.comments.map((c) => (
-                            <p key={c.id}>
-                              - {c.content} (
-                              {new Date(c.created_at).toLocaleString()})
-                            </p>
-                          ))}
-                        </div>
-                        <div className="flex">
-                          <Input
-                            type="text"
-                            placeholder="Add a comment"
-                            value={commentInputs[img.id] || ""}
-                            onChange={(e) => {
-                              setCommentInputs((p) => ({
-                                ...p,
-                                [img.id]: e.target.value,
-                              }));
-                            }}
-                          />
-                          <Button
-                            type="primary"
-                            onClick={() => handleAddComment(img.id)}
-                          >
-                            Add
-                          </Button>
-                        </div>
-                      </div>
-                    }
-                  />
-                </Card>
+                <ImageCard key={img.id} data={img} />
               ))}
             </div>
           )}

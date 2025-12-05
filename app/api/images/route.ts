@@ -15,7 +15,6 @@ export async function GET(): Promise<
       error: null,
     });
   } catch (error) {
-    console.log(error);
     return NextResponse.json(
       { data: null, error: String(error) },
       { status: 500 }
@@ -46,7 +45,6 @@ export async function POST(
 
     return NextResponse.json({ data: created, error: null }, { status: 201 });
   } catch (error) {
-    console.log(error);
     return NextResponse.json(
       { data: null, error: String(error) },
       { status: 500 }
