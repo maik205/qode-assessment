@@ -1,65 +1,172 @@
+/* eslint-disable @next/next/no-img-element */
+"use client";
+
+import { LoadingOutlined, UploadOutlined } from "@ant-design/icons";
+import { Button, Card, Input, Spin, Upload, UploadProps } from "antd";
+import Meta from "antd/es/card/Meta";
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import { IApiResponse } from "./interfaces/api.response";
+import { httpClient } from "./http.service";
+import { API_ROUTES } from "./routes";
+import { fileToBase64 } from "./utils";
+
+type CommentType = { id: string; content: string; created_at: string };
+type ImageType = {
+  id: string;
+  image_base64: string;
+  created_at: string;
+  comments: CommentType[];
+};
 
 export default function Home() {
+  const [images, setImages] = useState<ImageType[]>([]);
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>(
+    {}
+  );
+
+  useEffect(() => {
+    fetchImages();
+  }, []);
+
+  async function fetchImages() {
+    try {
+      const images = await httpClient.get<ImageType[]>(API_ROUTES.IMAGES);
+      console.log(images);
+      setImages(images || []);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function handleUpload() {
+    if (!file) return;
+    setUploading(true);
+    const toUpload = file;
+    setFile(null);
+
+    try {
+      const base64 = await fileToBase64(toUpload);
+      const res = await httpClient.post<ImageType>(API_ROUTES.IMAGES, {
+        image_base64: base64,
+      });
+      if (res) {
+        setImages(images.push(res) ? [...images] : images);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleAddComment(imageId: string) {
+    const content = (commentInputs[imageId] || "").trim();
+    if (!content) return;
+    try {
+      await httpClient.post<CommentType>(API_ROUTES.COMMENTS, {
+        imageId,
+        content,
+      });
+      setCommentInputs((p) => ({ ...p, [imageId]: "" }));
+      await fetchImages();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  const uploadProps: UploadProps = {
+    onChange(info) {
+      const file = info.file.originFileObj;
+      if (file) {
+        setFile(file);
+        handleUpload();
+      }
+    },
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="w-full flex justify-center h-full p-4">
+      <div className="max-w-3xl gap-5 w-full flex flex-col items-center">
+        <div className="w-full flex justify-between">
+          <div className=""></div>
+          <Upload {...uploadProps} showUploadList={false}>
+            <Button
+              disabled={uploading}
+              icon={
+                uploading ? (
+                  <Spin indicator={<LoadingOutlined spin />} />
+                ) : (
+                  <UploadOutlined />
+                )
+              }
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              Upload your image
+            </Button>
+          </Upload>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div>
+          {images.length === 0 ? (
+            <p>No images uploaded yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {images.map((img) => (
+                <Card
+                  key={img.id}
+                  hoverable
+                  cover={
+                    <img
+                      src={`data:image/png;base64,${img.image_base64}`}
+                      alt="Uploaded"
+                    />
+                  }
+                >
+                  <Meta
+                    title={`Uploaded at: ${new Date(
+                      img.created_at
+                    ).toLocaleString()}`}
+                    description={
+                      <div>
+                        <div className="mb-2">
+                          <strong>Comments:</strong>
+                          {img.comments.length === 0 && <p>No comments yet.</p>}
+                          {img.comments.map((c) => (
+                            <p key={c.id}>
+                              - {c.content} (
+                              {new Date(c.created_at).toLocaleString()})
+                            </p>
+                          ))}
+                        </div>
+                        <div className="flex">
+                          <Input
+                            type="text"
+                            placeholder="Add a comment"
+                            value={commentInputs[img.id] || ""}
+                            onChange={(e) => {
+                              setCommentInputs((p) => ({
+                                ...p,
+                                [img.id]: e.target.value,
+                              }));
+                            }}
+                          />
+                          <Button
+                            type="primary"
+                            onClick={() => handleAddComment(img.id)}
+                          >
+                            Add
+                          </Button>
+                        </div>
+                      </div>
+                    }
+                  />
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
-      </main>
+      </div>
     </div>
   );
 }
