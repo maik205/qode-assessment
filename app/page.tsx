@@ -1,13 +1,17 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { LoadingOutlined, UploadOutlined } from "@ant-design/icons";
+import Icon, {
+  LoadingOutlined,
+  ReloadOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
 import { Button, Spin, Upload, UploadProps } from "antd";
 import { useEffect, useState } from "react";
 import { httpClient } from "./http.service";
 import { API_ROUTES } from "./routes";
 import { fileToBase64 } from "./utils";
-import { CommentType, ImageType } from "./interfaces/entity.types";
+import { ImageType } from "./interfaces/entity.types";
 import { ImageCard } from "./components/image-card";
 
 export default function Home() {
@@ -15,13 +19,10 @@ export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [commentInputs, setCommentInputs] = useState<Record<string, string>>(
-    {}
-  );
-
+  const [reloadTrigger, setReloadTrigger] = useState(0);
   useEffect(() => {
     fetchImages();
-  }, []);
+  }, [reloadTrigger]);
 
   async function fetchImages() {
     try {
@@ -69,7 +70,16 @@ export default function Home() {
   return (
     <div className="w-full flex justify-center h-full p-4">
       <div className="max-w-3xl gap-5 w-full flex flex-col items-center">
-        <div className="w-full flex justify-end">
+        <div className="w-full flex gap-2 justify-end">
+          <Button
+            className="ml-2"
+            onClick={() =>
+              setReloadTrigger((reloadTrigger) => reloadTrigger + 1)
+            }
+            disabled={isLoading}
+          >
+            <Icon component={ReloadOutlined} />
+          </Button>
           <Upload {...uploadProps} showUploadList={false}>
             <Button
               disabled={uploading}
